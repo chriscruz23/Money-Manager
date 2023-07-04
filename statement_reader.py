@@ -26,7 +26,8 @@ def get_statement_transactions(
 
     Args:
         file_name (str): path to a bank statement pdf file containing transaction data.
-        regex (Pattern): regex pattern used to find all transaction data in the given statement.
+        transactions_regex (re.Pattern): regex used to find transactions in the given statement.
+        withdrawals_start_regex (re.Pattern): regex used to indicate where the withdrawal transactions start.
 
     Returns:
         list[str]: a list of all matched transactions of type String for this file.
@@ -49,23 +50,27 @@ def get_statement_transactions(
     return matches
 
 
-def get_all_transactions_from_folder(
-    folder_path: str, regex: re.Pattern, withdrawals_start_regex: re.Pattern
+def get_all_transactions(
+    folder_path: str,
+    transactions_regex: re.Pattern,
+    withdrawals_start_regex: re.Pattern,
 ) -> list[str]:
     """Given a folder path and an accompanying regex pattern to match the desired transactions,
     read each statement pdf and return a list of transactions ready for pre-processing.
 
     Args:
         folder_path (str): path to a folder containing all bank statement pdf files.
-        regex (re.Pattern): regex pattern used to find all transaction data in the given statements.
+        transactions_regex (re.Pattern): regex used to find all transactions throughout the given statements.
+        withdrawals_start_regex (re.Pattern): regex used to indicate where the withdrawal transactions start.
 
     Returns:
         list[str]: a list of all matched transactions of type String for all files in this folder.
     """
+
     raw_data = []
     for statement in scandir(folder_path):
         raw_data += get_statement_transactions(
-            statement, regex, withdrawals_start_regex
+            statement, transactions_regex, withdrawals_start_regex
         )
 
     return raw_data
