@@ -1,5 +1,4 @@
-"""Modules used to read statement data and pre-process the transactions.
-"""
+"""Module used to read statement data and pre-process the transactions."""
 
 import re
 from os import scandir

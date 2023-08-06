@@ -1,10 +1,18 @@
+"""Module for scraping discover pdfs files.
+
+Starting February 2020, Discover decided to change the design of their statements,
+and so this module has 2 different regexes for dealing with scraping both formats
+of pdf. Returns a single (csv) file of all the transaction data found.
+"""
+
 import pandas as pd
 import regex as re
-from utilities import last_day_of_month, month_abbreviation, process_pdf, process_pdfs
+from utilities import last_day_of_month, month_abbreviation, process_pdfs
 
 
 def scrape(directory: str) -> None:
-    """Main function for scraping raw transaction text from Discover pdf files. The transaction data will be returned in a list in the format:
+    """Main function for scraping raw transaction text from Discover pdf files. The transaction data
+    will be returned in a list in the format:
     ['year month day memo amount']
 
     Args:
@@ -38,14 +46,15 @@ def scrape(directory: str) -> None:
                     day = match[4:6]
                     match = match[7:]
                 matches.append(" ".join([year, month, day, match]))
-        # ...otherwise, use new ones
+        # ...otherwise, use new regexes
         else:
             month, year = re.search(NEW_DATE_REG, stmt).groups()
-            day = last_day_of_month(month, year)
             month = month_abbreviation(month)
 
             for match in re.findall(NEW_REG, stmt):
-                if not match.upper().startswith("TOTAL INTEREST"):  # interest charge
+                if match.upper().startswith("TOTAL INTEREST"):  # interest charge
+                    day = last_day_of_month(month, year)
+                else:
                     day = match[3:5]
                     match = match[6:]
                 matches.append(" ".join([year, month, day, match]))
