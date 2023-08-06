@@ -19,7 +19,7 @@ def _get_file_paths(directory: str) -> list[str]:
     return f
 
 
-def process_pdf(file: str) -> str:
+def extract_pdf(file: str) -> str:
     """Given a file path to a single pdf file, return all of its text."""
     text = ""
     with open(file, "rb") as f:
@@ -29,10 +29,10 @@ def process_pdf(file: str) -> str:
     return text
 
 
-def process_pdfs(directory: str) -> list[str]:
+def extract_pdfs(directory: str) -> list[str]:
     """Given a directory of pdf files, return a list of all of their text."""
     with mp.Pool() as pool:
-        return pool.map(process_pdf, _get_file_paths(directory))
+        return pool.map(extract_pdf, _get_file_paths(directory))
 
 
 def last_day_of_month(month: str | int, year: str | int) -> str:
