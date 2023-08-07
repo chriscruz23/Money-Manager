@@ -1,42 +1,42 @@
-"""This module provides utility functions for reading pdf files and dealing with date conversions."""
+"""This module provides utility functions for extracting pdf files and dealing with date conversions."""
 
 import multiprocessing as mp
+import os
 from calendar import month_abbr, monthrange
-from os import path, walk
 
-from PyPDF2 import PdfReader
+from tika import parser
 
 # for converting between month names, their number identifier, and vice-versa
 MONTH_NUM = {m: i for i, m in enumerate(month_abbr) if m}  # eg. ("Jan": 1)
 NUM_MONTH = {i: m for i, m in enumerate(month_abbr) if m}  # eg. (1: "Jan")
 
 
-def _get_file_paths(directory: str) -> list[str]:
-    """Given a directory of pdf files, return a list of their absolute paths."""
-    f = []
-    for root, _, file_names in walk(directory):
-        [f.append(path.join(root, fn)) for fn in file_names]
-    return f
+def _extract_pdf(file: str) -> str:
+    """Used as function to multiprocess."""
+    return parser.from_file(file, service="text")["content"].strip()
 
 
-def extract_pdf(file: str) -> str:
-    """Given a file path to a single pdf file, return all of its text."""
-    text = ""
-    with open(file, "rb") as f:
-        r = PdfReader(f)
-        for page in r.pages:
-            text += page.extract_text().replace("\n", " ")
-    return text
+def extract_pdfs(file: str) -> list[str]:
+    """Given a single pdf file or a path to pdf files, return a list of all of their text."""
+    fns = []
 
+    if os.path.isdir(file):
+        for root, _, file_names in os.walk(file):
+            [fns.append(os.path.join(root, fn)) for fn in file_names]
+    elif os.path.isfile(file):
+        fns.append(file)
+    else:
+        raise TypeError(
+            f"Argument needs to be a folder of pdf files, or a pdf file. {file}"
+        )
 
-def extract_pdfs(directory: str) -> list[str]:
-    """Given a directory of pdf files, return a list of all of their text."""
     with mp.Pool() as pool:
-        return pool.map(extract_pdf, _get_file_paths(directory))
+        return pool.map(_extract_pdf, fns)
 
 
 def last_day_of_month(month: str | int, year: str | int) -> str:
-    """Given a year and a month (abraviation or number), return the last day in that given month."""
+    """Given a year and a month (abraviation or number), return the last day in
+    that given month."""
     if isinstance(year, str):
         year = int(year)
     if month in MONTH_NUM:
