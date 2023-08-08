@@ -9,7 +9,9 @@ from calendar import month_abbr, monthrange
 
 import pandas as pd
 import regex as re
-from processor import get_transactions
+
+# from typing import Protocol
+
 
 MONTH_NUM = {m: i for i, m in enumerate(month_abbr) if m}  # eg. ("Jan": 1)
 NUM_MONTH = {i: m for i, m in enumerate(month_abbr) if m}  # eg. (1: "Jan")
@@ -27,7 +29,7 @@ def _last_day_of_month(month: str | int, year: str | int) -> str:
     return str(monthrange(year, month)[1])
 
 
-def _transaction_parser(statement: str):
+def parser(statement: str):
     # compiled regexes for matching both old new format Discover pdfs
     OLD_DATE_REG = re.compile(r"(?<=Close Date: )(\w{3}) \d{1,2}, (\d{4})")
     OLD_REG = re.compile(
@@ -66,5 +68,5 @@ def _transaction_parser(statement: str):
     return matches
 
 
-def scrape(file: str, file_destination: str, to_csv: bool = False) -> None:
-    df = pd.DataFrame(get_transactions(file, _transaction_parser))
+# def scrape(file: str, file_destination: str = None, to_csv: bool = False) -> None:
+#     pass
