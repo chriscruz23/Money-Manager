@@ -1,10 +1,18 @@
+"""Module for scraping pnc pdf files.
+
+Is used in conjunction with the Processor class in pdf_processor to extract
+all transactional data for PNC statements. Returns a list of strings of the
+transactions.
+"""
+
+
 import os
 
 import regex as re
 from base_pdf_parser import PDFParser
 
 
-class DiscoverParser(PDFParser):
+class PNCParser(PDFParser):
     def __init__(self, file) -> None:
         if not os.path.exists(file) or (
             not os.path.isdir(file) and not os.path.isfile(file)
@@ -20,21 +28,23 @@ class DiscoverParser(PDFParser):
         ]
 
     def parse(self, statement: str) -> list[str]:
-        WITHDRAWALS_REGEX = re.compile(r"Banking/Debit Card Withdrawals")
-        REG = re.compile(
-            r"\d{2}/\d{2} \d*,?\d*\.\d{2} .*(?=\n\d{2}/\d{2}|\nOnline and Electronic|\nBanking/Debit Card|\n4Virtual Wallet|\nDaily Balance|\nOther Deductions)|\d{2}/\d{2} \d*,?\d*\.\d{2} .*\n.*",
-            re.MULTILINE,
+        YEAR_REG = re.compile(r"(?<=For the period [\d\/]* to \d{2}\/\d{2}\/)\d{4}")
+        WITHDRAWALS_REG = re.compile(r"Banking/Debit Card Withdrawals")
+        TRANSACTION_REG = re.compile(
+            r"\d{2}/\d{2} \d*,?\d*\.\d{2} (?!\d{2}/\d{2} \d*,?\d*\.\d{2}|Member)[\w\s\/\.\-\#*]+?(?= \d{2}\/\d{2}| Banking| Deposits| Daily| Online and| Page)"
         )
-
-        # TODO - PNC Parser
-        # [ ]  - Figure out statement date regex
+        statement = statement.replace("\n", " ").replace("  ", " ")
+        withdrawals_start = re.search(WITHDRAWALS_REG, statement).end()
+        year = re.search(YEAR_REG, statement).group()
+        
         matches = []
-        withdrawals_start = re.search(WITHDRAWALS_REGEX, statement).end()
-        for match in re.finditer(REG, statement):
+        for match in re.finditer(TRANSACTION_REG, statement):
             sign = " +"
             if match.start() > withdrawals_start:
                 sign = " -"
-            match = sign.join(match.group().split(" ", 1))
-            matches.append(f"{year}/{match}")
+            match = year + "/" + sign.join(match.group().split(' ', 1))
+            # print(match)
+            # matches.append(f"{year}/{ans}")
+            matches.append(match)
 
         return matches

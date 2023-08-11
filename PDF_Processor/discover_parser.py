@@ -1,8 +1,10 @@
-"""Module for scraping discover pdfs files.
+"""Module for scraping discover pdf files.
 
 Starting February 2020, Discover decided to change the design of their statements,
 and so this module has 2 different regexes for dealing with scraping both formats
-of pdf. Returns a single (csv) file of all the transaction data found.
+of pdf. Is used in conjunction with the Processor class in pdf_processor to extract
+all transactional data for Discover statements. Returns a list of strings of the
+transactions.
 """
 
 
@@ -28,7 +30,7 @@ class DiscoverParser(PDFParser):
         ]
 
     def parse(self, statement: str) -> list[str]:
-        # compiled regexes for matching both old new format Discover pdfs
+        # COMMENT these regexes are for matching both old and new format Discover pdfs (post 2020-01 format change)
         OLD_DATE_REG = re.compile(r"(?<=Close Date: )(\w{3}) \d{1,2}, (\d{4})")
         OLD_REG = re.compile(
             r"(?<=\b\w{3}\b \d{1,2} )\b\w{3}\b \d{1,2} [\s\w\-\/\*#]* \$? ?-?\d?,?\d+\.\d{2}|INTEREST CHARGE ON PURCHASES \$? -?\d?,?\d+\.\d{2}"
@@ -39,6 +41,7 @@ class DiscoverParser(PDFParser):
         )
 
         matches = []
+        # old format statements
         if re.search(OLD_DATE_REG, statement):
             month, year = re.search(OLD_DATE_REG, statement).groups()
 
@@ -49,7 +52,7 @@ class DiscoverParser(PDFParser):
                 else:
                     _, day, match = match.split(sep=" ", maxsplit=2)
                 matches.append(" ".join([year, month, day, match]))
-        # ...otherwise, use new regexes
+        # new format statements
         else:
             month, year = re.search(NEW_DATE_REG, statement).groups()
             year = "20" + year

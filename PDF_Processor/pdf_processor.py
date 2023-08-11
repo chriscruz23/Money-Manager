@@ -11,7 +11,7 @@ from tika import parser as tika_parser
 
 
 class Processor:
-    def __init__(self, parser: PDFParser) -> None:
+    def __init__(self, parser: PDFParser=None) -> None:
         self.parser = parser
 
     def extract_one(self, file: str) -> str:
@@ -25,7 +25,7 @@ class Processor:
         with mp.Pool() as pool:
             return pool.map(self.extract_one, self.parser.file_names)
 
-    def scrape(self) -> list[str]:
+    def scrape(self, testing_text: bool=False, testing_one: bool=False) -> list[str]:
         """Main function for extracting raw transactional data from Discover pdf files. The transaction data
         will be returned in a list in the format:
         ['year month day memo amount']
@@ -34,8 +34,14 @@ class Processor:
             file (str): Either a single Discover PDF file, or a directory of Discover PDF files.
         """
         text = self.extract_all()
+        if testing_text:
+            return text
+
         transactions = []
         for x in map(self.parser.parse, text):
             transactions.extend(x)
+            if testing_one:
+                break
 
-        return pd.DataFrame(transactions)
+
+        return transactions
