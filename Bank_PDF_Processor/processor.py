@@ -6,12 +6,12 @@ import pandas as pd
 import tika
 
 tika.initVM()
-from base_pdf_parser import PDFParser
+from parsing_strategy import ParsingStrategy
 from tika import parser as tika_parser
 
 
 class Processor:
-    def __init__(self, parser: PDFParser=None) -> None:
+    def __init__(self, parser: ParsingStrategy=None) -> None:
         self.parser = parser
 
     def extract_one(self, file: str) -> str:

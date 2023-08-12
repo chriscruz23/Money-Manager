@@ -6,26 +6,20 @@ transactions.
 """
 
 
-import os
-
+import numpy as np
 import regex as re
-from base_pdf_parser import PDFParser
+from parsing_strategy import ParsingStrategy
 
 
-class PNCParser(PDFParser):
+class PNCParser(ParsingStrategy):
     def __init__(self, file) -> None:
-        if not os.path.exists(file) or (
-            not os.path.isdir(file) and not os.path.isfile(file)
-        ):
-            raise TypeError(
-                f"Argument needs to be a folder of pdf files, or a pdf file. {file}"
-            )
+        super().__init__(file)
 
-        self.file_names = [
-            os.path.join(root, f_name)
-            for root, _, f_names in os.walk(file)
-            for f_name in f_names
-        ]
+    def _format(self, match: str) -> str:
+        date, amount, *memo = match.split()
+        memo = " ".join(memo)
+        account = "PNC Checking"
+        return [date, account, memo, amount, np.NAN, np.NAN, np.NAN, np.NAN]
 
     def parse(self, statement: str) -> list[str]:
         YEAR_REG = re.compile(r"(?<=For the period [\d\/]* to \d{2}\/\d{2}\/)\d{4}")
@@ -39,12 +33,10 @@ class PNCParser(PDFParser):
         
         matches = []
         for match in re.finditer(TRANSACTION_REG, statement):
-            sign = " +"
+            sign = " "
             if match.start() > withdrawals_start:
                 sign = " -"
-            match = year + "/" + sign.join(match.group().split(' ', 1))
-            # print(match)
-            # matches.append(f"{year}/{ans}")
+            match = self._format(year + "/" + sign.join(match.group().split(' ', 1)))
             matches.append(match)
 
         return matches

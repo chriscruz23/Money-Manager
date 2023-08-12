@@ -8,26 +8,27 @@ transactions.
 """
 
 
-import os
-
+import numpy as np
 import regex as re
-from base_pdf_parser import PDFParser
+from parsing_strategy import ParsingStrategy
 
 
-class DiscoverParser(PDFParser):
+class DiscoverParser(ParsingStrategy):
     def __init__(self, file) -> None:
-        if not os.path.exists(file) or (
-            not os.path.isdir(file) and not os.path.isfile(file)
-        ):
-            raise TypeError(
-                f"Argument needs to be a folder of pdf files, or a pdf file. {file}"
-            )
+        super().__init__(file)
 
-        self.file_names = [
-            os.path.join(root, f_name)
-            for root, _, f_names in os.walk(file)
-            for f_name in f_names
-        ]
+    def _format(self, match: str) -> str:
+        date, *memo, amount = match.split()
+        memo = " ".join(memo)
+        amount = amount.replace("$", "")
+        if "-" in amount:
+            "print"
+            amount = amount.replace("-", "")
+        else:
+            amount = f"-{amount}"
+        account = "Discover"
+        return [date, account, memo, amount, np.NAN, np.NAN, np.NAN, np.NAN]
+
 
     def parse(self, statement: str) -> list[str]:
         # COMMENT these regexes are for matching both old and new format Discover pdfs (post 2020-01 format change)
@@ -40,32 +41,33 @@ class DiscoverParser(PDFParser):
             r"\d{2}\/\d{2}[\s\w\-\/\*#\\n'\.]* ?\$\d+\.\d{2}|TOTAL INTEREST FOR THIS PERIOD ?\$\d+\.\d{2}"
         )
 
+        statement = statement.replace("\n", " ").strip()
         matches = []
         # old format statements
         if re.search(OLD_DATE_REG, statement):
             month, year = re.search(OLD_DATE_REG, statement).groups()
+            month = str(ParsingStrategy.MONTH_NUM.get(month))
 
             for match in re.findall(OLD_REG, statement):
-                match = match.replace("\n", " ").strip()
                 if match.upper().startswith("INTEREST CHARGE"):  # interest charge
-                    day = PDFParser.last_day_of_month(month, year)
+                    day = ParsingStrategy.last_day_of_month(month, year)
                 else:
                     _, day, match = match.split(sep=" ", maxsplit=2)
-                matches.append(" ".join([year, month, day, match]))
+                match = "/".join([year, month, day]) + " " + match
+                matches.append(self._format(match))
         # new format statements
         else:
             month, year = re.search(NEW_DATE_REG, statement).groups()
             year = "20" + year
-            month = PDFParser.NUM_MONTH.get(int(month))
 
             for match in re.findall(NEW_REG, statement):
-                match = match.replace("\n", " ").strip()
                 if match.upper().startswith("TOTAL INTEREST"):  # interest charges
-                    day = DiscoverParser.last_day_of_month(month, year)
+                    day = ParsingStrategy.last_day_of_month(month, year)
                 else:
                     _, day, match = match.replace("/", " ", 1).split(
                         sep=" ", maxsplit=2
                     )
-                matches.append(" ".join([year, month, day, match]))
+                match = "/".join([year, month, day]) + " " + match
+                matches.append(self._format(match))
 
         return matches
