@@ -22,17 +22,16 @@ class PNCParser(ParsingStrategy):
         return [date, account, memo, amount, np.NAN, np.NAN, np.NAN, np.NAN]
 
     def parse(self, statement: str) -> list[str]:
-        YEAR_REG = re.compile(r"(?<=For the period [\d\/]* to \d{2}\/\d{2}\/)\d{4}")
-        WITHDRAWALS_REG = re.compile(r"Banking/Debit Card Withdrawals")
-        TRANSACTION_REG = re.compile(
+        YEAR_PATTERN = re.compile(r"(?<=For the period [\d\/]* to \d{2}\/\d{2}\/)\d{4}")
+        WITHDRAWALS_PATTERN = re.compile(r"Banking/Debit Card Withdrawals")
+        TRANSACTION_PATTERN = re.compile(
             r"\d{2}/\d{2} \d*,?\d*\.\d{2} (?!\d{2}/\d{2} \d*,?\d*\.\d{2}|Member)[\w\s\/\.\-\#*]+?(?= \d{2}\/\d{2}| Banking| Deposits| Daily| Online and| Page)"
         )
-        statement = statement.replace("\n", " ").replace("  ", " ")
-        withdrawals_start = re.search(WITHDRAWALS_REG, statement).end()
-        year = re.search(YEAR_REG, statement).group()
+        withdrawals_start = re.search(WITHDRAWALS_PATTERN, statement).end()
+        year = re.search(YEAR_PATTERN, statement).group()
         
         matches = []
-        for match in re.finditer(TRANSACTION_REG, statement):
+        for match in re.finditer(TRANSACTION_PATTERN, statement):
             sign = " "
             if match.start() > withdrawals_start:
                 sign = " -"

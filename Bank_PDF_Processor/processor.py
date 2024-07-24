@@ -2,7 +2,7 @@
 
 import multiprocessing as mp
 
-import pandas as pd
+import regex as re
 import tika
 
 tika.initVM()
@@ -17,7 +17,8 @@ class Processor:
     def extract_one(self, file: str) -> str:
         """Used as pdf extraction function in multiprocessing pool."""
 
-        return tika_parser.from_file(file, service="text")["content"].strip()
+        content = tika_parser.from_file(file, service="text")["content"].strip()
+        return re.sub(r"(?:\n)+", " ", content)
 
     def extract_all(self) -> list[str]:
         """Given a single pdf file or a path to pdf files, return a list of all of their extracted text."""
@@ -39,7 +40,10 @@ class Processor:
 
         transactions = []
         for x in map(self.parser.parse, text):
-            transactions.extend(x)
+            if transactions:
+                transactions.extend(x)
+            else:
+                continue
             if testing_one:
                 break
 
