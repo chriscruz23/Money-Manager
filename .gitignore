@@ -1,5 +1,6 @@
 data/
+*.ipynb
 *cache*
-data_science/*
+.env
 .vscode
 scratch.py

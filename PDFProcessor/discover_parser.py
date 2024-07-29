@@ -7,7 +7,6 @@ all transactional data for Discover statements. Returns a list of strings of the
 transactions.
 """
 
-
 import numpy as np
 import regex as re
 from parsing_strategy import ParsingStrategy
@@ -28,7 +27,6 @@ class DiscoverParser(ParsingStrategy):
             amount = f"-{amount}"
         account = "Discover"
         return [date, account, memo, amount, np.NAN, np.NAN, np.NAN, np.NAN]
-
 
     def parse(self, statement: str) -> list[str]:
         # COMMENT these regexes are for matching both old and new format Discover pdfs (post 2020-01 format change)
